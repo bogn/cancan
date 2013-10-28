@@ -38,8 +38,18 @@ module CanCan
                 records.merge(rule.conditions)
               end
             elsif !rule.base_behavior
-              records.remove rule.conditions
-              records
+              if rule.conditions.is_a?(Hash)
+                neg_conds = {}
+                rule.conditions.each_pair do |k,v|
+                  if !k.is_a?(Symbol) || v.is_a?(Hash)
+                    raise ArgumentError.new("unable to use complex cannot queries")
+                  end
+                  neg_conds[k] = { :$ne => v }
+                end
+                records.where(neg_conds)
+              else
+                records.merge(rule.conditions)
+              end
             else
               records
             end
